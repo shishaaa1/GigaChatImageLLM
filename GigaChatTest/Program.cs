@@ -4,6 +4,7 @@ using System.Net.Security;
 using System.Text;
 using System.Threading.Tasks;
 using GigaChatTest.Models;
+using System;
 
 namespace GigaChatTest
 {
@@ -137,5 +138,51 @@ namespace GigaChatTest
             }
             return responseMessage;
         }
+        ///<summary>
+        ///Метод для генерации изображения
+        /// </summary>
+        /// <param name="token">Токен полльзователя</param>
+        ///<param name="messages">Сообщение пользователя</param>
+        ///<returns></returns>
+        public static async Task<ResponseMessage> GetPicture(string token,List<Request.Message> messages)
+        {
+            ResponseMessage responseMessage = null;
+            string Url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
+            using (HttpClientHandler Handler = new HttpClientHandler())
+            {
+                Handler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true;
+                using (HttpClient client = new HttpClient(Handler))
+                {
+                    HttpRequestMessage Request = new HttpRequestMessage(HttpMethod.Post, Url);
+                    Request.Headers.Add("Accept", "application/json");
+                    Request.Headers.Add("Authorization", $"Bearer {token}");
+
+                    Models.Request DataRequest = new Models.Request()
+                    {
+                        model = "GigaChat",
+                        repetition_penalty = 1,
+                        messages = messages
+                    };
+
+                    string JsonContent = JsonConvert.SerializeObject(DataRequest);
+                    Request.Content = new StringContent(JsonContent, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage Response = await client.SendAsync(Request);
+
+                    if (Response.IsSuccessStatusCode)
+                    {
+                        string ResponseContent = await Response.Content.ReadAsStringAsync();
+                        responseMessage = JsonConvert.DeserializeObject<ResponseMessage>(ResponseContent);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Ошибка API: {Response.StatusCode}");
+                    }
+                }
+            }
+            return responseMessage;
+        }
+
     }
+
 }

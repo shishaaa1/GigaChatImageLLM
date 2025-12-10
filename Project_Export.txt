@@ -1,0 +1,437 @@
+﻿PROJECT EXPORT - 12/10/2025 15:05:41
+Project Path: C:\Users\student-a502.PERMAVIAT\Desktop\GigaChatTest-master\GigaChatTest-master
+Total Files: 8
+
+================================================================================
+FILE: GigaChatTest.sln
+================================================================================
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GigaChatTest", "GigaChatTest\GigaChatTest.csproj", "{B88B42B5-AA34-47E5-9593-B6F0849BF981}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B88B42B5-AA34-47E5-9593-B6F0849BF981}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B88B42B5-AA34-47E5-9593-B6F0849BF981}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B88B42B5-AA34-47E5-9593-B6F0849BF981}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B88B42B5-AA34-47E5-9593-B6F0849BF981}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C2EAF403-53C1-4DB2-BB53-CE37E6BCB4E5}
+	EndGlobalSection
+EndGlobal
+
+
+
+================================================================================
+FILE: GigaChatTest\GigaChatTest.csproj
+================================================================================
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+</Project>
+
+
+
+================================================================================
+FILE: GigaChatTest\Program.cs
+================================================================================
+using GigaChatTest.Response;
+using Newtonsoft.Json;
+using System.Net.Security;
+using System.Text;
+using System.Threading.Tasks;
+using GigaChatTest.Models;
+using System;
+
+namespace GigaChatTest
+{
+    internal class Program
+    {
+        /// <summary>
+        /// Клиент ID
+        /// </summary>
+        static string ClientId = "019b038f-be32-7728-9ba8-86b03afb5efc";
+        /// <summary>
+        /// Код авторизации
+        /// </summary>
+        static string AuthorizationKey = "MDE5YjAzOGYtYmUzMi03NzI4LTliYTgtODZiMDNhZmI1ZWZjOjdlZTk5Y2MzLTFlMGEtNGFjMC1hMjI0LWMxY2ZiZjY1ZmNiMA==";
+
+        static async Task Main(string[] args)
+        {
+            string Token = await GetToken(ClientId, AuthorizationKey);
+            if (Token == null)
+            {
+                Console.WriteLine("Не удалось получить токен");
+                return; 
+            }
+
+            List<Request.Message> ConversationHistory = new List<Request.Message>();
+            List<RequestImage.Message> ConservationImageHistory = new List<RequestImage.Message>();
+
+            while (true)
+            {
+                //Console.Write("Сообщение: ");
+                //string UserInput = Console.ReadLine();
+
+                //if (string.IsNullOrWhiteSpace(UserInput)) continue;
+                //var userMessage = new Request.Message()
+                //{
+                //    role = "user",
+                //    content = UserInput
+                //};
+                //ConversationHistory.Add(userMessage);
+
+                //ResponseMessage Answer = await GetAnswer(Token, ConversationHistory);
+
+                //if (Answer != null && Answer.choices != null && Answer.choices.Count > 0)
+                //{
+                //    string botResponse = Answer.choices[0].message.content;
+                //    Console.WriteLine("Ответ: " + botResponse);
+
+                   
+                //    ConversationHistory.Add(Answer.choices[0].message);
+                //}
+                //else
+                //{
+                //    Console.WriteLine("Ошибка получения ответа или пустой ответ.");
+                //}
+                Console.Write("Сообщение: ");
+                string UserInput = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(UserInput)) continue;
+                var userMessage = new RequestImage.Message()
+                {
+                    role = "user",
+                    content = UserInput
+                };
+                ConservationImageHistory.Add(userMessage);
+
+                ResponseMessage Answer = await GetPicture(Token, ConservationImageHistory);
+
+                if (Answer != null && Answer.choices != null && Answer.choices.Count > 0)
+                {
+                    string botResponse = Answer.choices[0].message.content;
+                    Console.WriteLine("Ответ: " + botResponse);
+
+
+                    ConversationHistory.Add(Answer.choices[0].message);
+                }
+                else
+                {
+                    Console.WriteLine("Ошибка получения ответа или пустой ответ.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Метод получения токена пользователя
+        /// </summary>
+        public static async Task<string> GetToken(string rqUID, string bearer)
+        {
+            string ReturnToken = null;
+            string Url = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
+            using (HttpClientHandler Handler = new HttpClientHandler())
+            {
+                Handler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyError) => true;
+                using (HttpClient client = new HttpClient(Handler))
+                {
+                    HttpRequestMessage Request = new HttpRequestMessage(HttpMethod.Post, Url);
+                    Request.Headers.Add("Accept", "application/json");
+                    Request.Headers.Add("RqUID", rqUID);
+                    Request.Headers.Add("Authorization", $"Bearer {bearer}");
+                    var Data = new List<KeyValuePair<string, string>>
+                    {
+                       new KeyValuePair<string, string>("scope", "GIGACHAT_API_PERS")
+                    };
+                    Request.Content = new FormUrlEncodedContent(Data);
+                    HttpResponseMessage Response = await client.SendAsync(Request);
+                    if (Response.IsSuccessStatusCode)
+                    {
+                        string ResponseContent = await Response.Content.ReadAsStringAsync();
+                        ResponseToken Token = JsonConvert.DeserializeObject<ResponseToken>(ResponseContent);
+                        ReturnToken = Token.access_token;
+                    }
+                }
+            }
+            return ReturnToken;
+        }
+
+        ///<summary>
+        ///Метод получения ответа
+        ///</summary>
+        ///<param name="token">Токен пользователя</param>
+        ///<param name="messages">История сообщений (диалог)</param>
+        ///<returns></returns>
+        public static async Task<ResponseMessage> GetAnswer(string token, List<Request.Message> messages)
+        {
+            ResponseMessage responseMessage = null;
+            string Url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
+            using (HttpClientHandler Handler = new HttpClientHandler())
+            {
+                Handler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true;
+                using (HttpClient client = new HttpClient(Handler))
+                {
+                    HttpRequestMessage Request = new HttpRequestMessage(HttpMethod.Post, Url);
+                    Request.Headers.Add("Accept", "application/json");
+                    Request.Headers.Add("Authorization", $"Bearer {token}");
+
+                    Models.Request DataRequest = new Models.Request()
+                    {
+                        model = "GigaChat",
+                        stream = false,
+                        repetition_penalty = 1,
+                        messages = messages
+                    };
+
+                    string JsonContent = JsonConvert.SerializeObject(DataRequest);
+                    Request.Content = new StringContent(JsonContent, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage Response = await client.SendAsync(Request);
+
+                    if (Response.IsSuccessStatusCode)
+                    {
+                        string ResponseContent = await Response.Content.ReadAsStringAsync();
+                        responseMessage = JsonConvert.DeserializeObject<ResponseMessage>(ResponseContent);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Ошибка API: {Response.StatusCode}");
+                    }
+                }
+            }
+            return responseMessage;
+        }
+        ///<summary>
+        ///Метод для генерации изображения
+        /// </summary>
+        /// <param name="token">Токен полльзователя</param>
+        ///<param name="messages">Сообщение пользователя</param>
+        ///<returns></returns>
+        public static async Task<ResponseMessage> GetPicture(string token, List<RequestImage.Message> messages)
+        {
+            ResponseMessage responseMessage = null;
+            string Url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
+
+            using (HttpClientHandler Handler = new HttpClientHandler())
+            {
+                Handler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true;
+                using (HttpClient client = new HttpClient(Handler))
+                {
+                    HttpRequestMessage Request = new HttpRequestMessage(HttpMethod.Post, Url);
+                    Request.Headers.Add("Content-Type", "application/json");
+                    Request.Headers.Add("Accept", "application/json");
+                    Request.Headers.Add("Authorization", $"Bearer {token}");
+                    var DataRequest = new
+                    {
+                        model = "GigaChat",
+                        messages = messages,
+                    };
+
+                    string JsonContent = JsonConvert.SerializeObject(DataRequest);
+                    Console.WriteLine($"Отправляемый JSON: {JsonContent}");
+
+                    Request.Content = new StringContent(JsonContent, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage Response = await client.SendAsync(Request);
+
+                    if (Response.IsSuccessStatusCode)
+                    {
+                        string ResponseContent = await Response.Content.ReadAsStringAsync();
+                        responseMessage = JsonConvert.DeserializeObject<ResponseMessage>(ResponseContent);
+                    }
+                    else
+                    {
+                        string ResponseContent = await Response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"Ошибка API: {Response.StatusCode}");
+                        Console.WriteLine($"Ошибка API в: {ResponseContent}");
+                    }
+                }
+            }
+            return responseMessage;
+        }
+
+    }
+
+}
+
+
+================================================================================
+FILE: GigaChatTest\Classes\WallpaperSetter.cs
+================================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GigaChatTest.Classes
+{
+    public class WallpaperSetter
+    {
+        private const int SPI_SETDESKWALLPAPER = 0x0014;
+        private const int SPIF_UPDATEINFILE = 0x01;
+        private const int SPIF_SENDWININCHANGE = 0x02;
+        [DllImport("user32.dll",CharSet=CharSet.Auto)]
+        private static extern int SystemParametersInfo(
+            int uAction,
+            int uParam,
+            string lpvParam,
+            int fuWinIni);
+        public static void SetWallpaper(string imagePath)
+        {
+            try {
+                SystemParametersInfo(
+                    SPI_SETDESKWALLPAPER,
+                    0,
+                    imagePath,
+                    SPIF_UPDATEINFILE | SPIF_SENDWININCHANGE);
+                Console.WriteLine($"Обои установлены: {imagePath}");
+            }catch(Exception ex) {
+                Console.WriteLine($"Ошибка: {ex.Message}");
+                
+            }
+        }
+    }
+}
+
+
+
+================================================================================
+FILE: GigaChatTest\Models\Request.cs
+================================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GigaChatTest.Models
+{
+    public class Request
+    {
+        public string model {  get; set; }  
+        public List<Message> messages { get; set; }
+        public bool stream {  get; set; }
+        public int repetition_penalty { get; set; }
+        public class Message
+        {
+            public string role { get; set; }
+            public string content { get; set; }
+        }
+    }
+}
+
+
+
+================================================================================
+FILE: GigaChatTest\Models\RequestImage.cs
+================================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GigaChatTest.Models
+{
+    public class RequestImage
+    {
+        public string model { get; set; }
+        public List<Message> messages { get; set; }
+        public bool function_call { get; set; }
+        public int repetition_penalty { get; set; }
+        public class Message
+        {
+            public string role { get; set; }
+            public string content { get; set; }
+        }
+    }
+}
+
+
+
+================================================================================
+FILE: GigaChatTest\Response\ResponseMessage.cs
+================================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using GigaChatTest.Models;
+
+namespace GigaChatTest.Response
+{
+    public class ResponseMessage
+    {
+        public List<Choice> choices { get; set; }
+        public int created { get; set; }
+        public string model { get; set; }
+        public string @object { get; set; }
+        public Usage usage { get; set; }
+        public class Usage
+        {
+            public int complition_token { get; set; }
+            public int prompt_tokens { get; set; }
+            public int system_tokens { get; set; }
+            public int total_tokens { get; set; }
+        }
+        public class Choice
+        {
+            ///<summary>
+            ///Причина завершения генерации:
+            ///"stop"
+            ///"lenght"
+            ///"content_filter"
+            /// </summary>
+            public string finish_reason { get; set; }
+            public int index { get; set; }
+            public Request.Message message { get; set; }
+        }
+    }
+}
+
+
+
+================================================================================
+FILE: GigaChatTest\Response\ResponseToken.cs
+================================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GigaChatTest.Response
+{
+    public class ResponseToken
+    {
+        public string access_token { get; set; }
+        public string expires_at { get; set; }
+    }
+}
+
+
+
