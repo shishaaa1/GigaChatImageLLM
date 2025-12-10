@@ -1,6 +1,6 @@
-﻿PROJECT EXPORT - 12/10/2025 15:05:41
-Project Path: C:\Users\student-a502.PERMAVIAT\Desktop\GigaChatTest-master\GigaChatTest-master
-Total Files: 8
+﻿PROJECT EXPORT - 12/10/2025 19:29:04
+Project Path: C:\Users\dreamgonewithout\Desktop\GigaChatImageLLM
+Total Files: 7
 
 ================================================================================
 FILE: GigaChatTest.sln
@@ -87,54 +87,28 @@ namespace GigaChatTest
             }
 
             List<Request.Message> ConversationHistory = new List<Request.Message>();
-            List<RequestImage.Message> ConservationImageHistory = new List<RequestImage.Message>();
 
             while (true)
             {
-                //Console.Write("Сообщение: ");
-                //string UserInput = Console.ReadLine();
-
-                //if (string.IsNullOrWhiteSpace(UserInput)) continue;
-                //var userMessage = new Request.Message()
-                //{
-                //    role = "user",
-                //    content = UserInput
-                //};
-                //ConversationHistory.Add(userMessage);
-
-                //ResponseMessage Answer = await GetAnswer(Token, ConversationHistory);
-
-                //if (Answer != null && Answer.choices != null && Answer.choices.Count > 0)
-                //{
-                //    string botResponse = Answer.choices[0].message.content;
-                //    Console.WriteLine("Ответ: " + botResponse);
-
-                   
-                //    ConversationHistory.Add(Answer.choices[0].message);
-                //}
-                //else
-                //{
-                //    Console.WriteLine("Ошибка получения ответа или пустой ответ.");
-                //}
                 Console.Write("Сообщение: ");
                 string UserInput = Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(UserInput)) continue;
-                var userMessage = new RequestImage.Message()
+                var userMessage = new Request.Message()
                 {
                     role = "user",
                     content = UserInput
                 };
-                ConservationImageHistory.Add(userMessage);
+                ConversationHistory.Add(userMessage);
 
-                ResponseMessage Answer = await GetPicture(Token, ConservationImageHistory);
+                ResponseMessage Answer = await GetAnswer(Token, ConversationHistory);
 
                 if (Answer != null && Answer.choices != null && Answer.choices.Count > 0)
                 {
                     string botResponse = Answer.choices[0].message.content;
                     Console.WriteLine("Ответ: " + botResponse);
 
-
+                   
                     ConversationHistory.Add(Answer.choices[0].message);
                 }
                 else
@@ -228,29 +202,27 @@ namespace GigaChatTest
         /// <param name="token">Токен полльзователя</param>
         ///<param name="messages">Сообщение пользователя</param>
         ///<returns></returns>
-        public static async Task<ResponseMessage> GetPicture(string token, List<RequestImage.Message> messages)
+        public static async Task<ResponseMessage> GetPicture(string token,List<Request.Message> messages)
         {
             ResponseMessage responseMessage = null;
             string Url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
-
             using (HttpClientHandler Handler = new HttpClientHandler())
             {
                 Handler.ServerCertificateCustomValidationCallback = (message, cert, chain, sslPolicyErrors) => true;
                 using (HttpClient client = new HttpClient(Handler))
                 {
                     HttpRequestMessage Request = new HttpRequestMessage(HttpMethod.Post, Url);
-                    Request.Headers.Add("Content-Type", "application/json");
                     Request.Headers.Add("Accept", "application/json");
                     Request.Headers.Add("Authorization", $"Bearer {token}");
-                    var DataRequest = new
+
+                    Models.Request DataRequest = new Models.Request()
                     {
                         model = "GigaChat",
-                        messages = messages,
+                        repetition_penalty = 1,
+                        messages = messages
                     };
 
                     string JsonContent = JsonConvert.SerializeObject(DataRequest);
-                    Console.WriteLine($"Отправляемый JSON: {JsonContent}");
-
                     Request.Content = new StringContent(JsonContent, Encoding.UTF8, "application/json");
 
                     HttpResponseMessage Response = await client.SendAsync(Request);
@@ -262,9 +234,7 @@ namespace GigaChatTest
                     }
                     else
                     {
-                        string ResponseContent = await Response.Content.ReadAsStringAsync();
                         Console.WriteLine($"Ошибка API: {Response.StatusCode}");
-                        Console.WriteLine($"Ошибка API в: {ResponseContent}");
                     }
                 }
             }
@@ -334,33 +304,6 @@ namespace GigaChatTest.Models
         public string model {  get; set; }  
         public List<Message> messages { get; set; }
         public bool stream {  get; set; }
-        public int repetition_penalty { get; set; }
-        public class Message
-        {
-            public string role { get; set; }
-            public string content { get; set; }
-        }
-    }
-}
-
-
-
-================================================================================
-FILE: GigaChatTest\Models\RequestImage.cs
-================================================================================
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GigaChatTest.Models
-{
-    public class RequestImage
-    {
-        public string model { get; set; }
-        public List<Message> messages { get; set; }
-        public bool function_call { get; set; }
         public int repetition_penalty { get; set; }
         public class Message
         {
